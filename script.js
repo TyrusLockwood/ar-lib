@@ -6,11 +6,11 @@ let currentColorIndex = 0;
 
 // 应用状态
 let appState = {
-  mode: 'marker', // 'marker' 或 'fixed'
   characterActivated: false, // 卡通人物是否已被激活
   markerFound: false, // 标记是否被发现
   activationInProgress: false, // 是否正在激活过程中
-  isWalking: false // 卡通人物是否正在行走
+  isWalking: false, // 卡通人物是否正在行走
+  menuVisible: true // 菜单是否可见
 };
 
 // 行走参数
@@ -326,7 +326,6 @@ function initializeFixedCharacter() {
 // 设置AR事件监听
 function setupAREvents() {
   const marker = document.querySelector('#hiro-marker');
-  const markerCharacter = document.querySelector('#marker-character');
 
   if (marker) {
     // 标记被发现时
@@ -334,21 +333,8 @@ function setupAREvents() {
       console.log('标记已发现！');
       appState.markerFound = true;
 
-      if (appState.mode === 'marker') {
-        showNotification('标记已发现！卡通人物正在显示', 'success');
-
-        // 添加发现标记时的特效
-        if (markerCharacter) {
-          markerCharacter.setAttribute('animation__found', {
-            property: 'scale',
-            from: '0 0 0',
-            to: '1 1 1',
-            dur: 1000,
-            easing: 'easeOutElastic'
-          });
-        }
-      } else if (appState.mode === 'fixed' && !appState.characterActivated && !appState.activationInProgress) {
-        // 在固定模式下，标记用于激活卡通人物
+      if (!appState.characterActivated && !appState.activationInProgress) {
+        // 标记用于激活卡通人物
         activateFixedCharacter();
       }
     });
@@ -358,10 +344,8 @@ function setupAREvents() {
       console.log('标记已丢失！');
       appState.markerFound = false;
 
-      if (appState.mode === 'marker') {
-        showNotification('标记已丢失，请重新对准标记', 'warning');
-      } else if (appState.mode === 'fixed' && appState.characterActivated) {
-        // 在固定模式下，如果卡通人物已激活，标记丢失不影响显示
+      if (appState.characterActivated) {
+        // 如果卡通人物已激活，标记丢失不影响显示
         showNotification('卡通人物已固定，可以移开标记了！', 'info');
       }
     });
@@ -404,7 +388,7 @@ function activateFixedCharacter() {
 
     // 3秒后提示用户可以移开标记
     setTimeout(() => {
-      if (appState.mode === 'fixed' && appState.characterActivated) {
+      if (appState.characterActivated) {
         showNotification('现在可以移开标记，卡通人物将继续在可视区域内漫步！', 'info');
       }
     }, 3000);
@@ -583,7 +567,7 @@ function changeWalkingDirection() {
 
 // 切换行走状态
 function toggleWalking() {
-  if (appState.mode === 'fixed' && appState.characterActivated) {
+  if (appState.characterActivated) {
     if (appState.isWalking) {
       stopWalking();
     } else {
@@ -592,93 +576,68 @@ function toggleWalking() {
   }
 }
 
-// 切换模式
-function toggleMode() {
-  if (appState.mode === 'marker') {
-    // 切换到固定模式
-    appState.mode = 'fixed';
-    showNotification('已切换到固定模式，用标记来激活卡通人物', 'info');
-  } else {
-    // 切换到标记模式
-    appState.mode = 'marker';
+// 重置卡通人物
+function resetCharacter() {
+  console.log('重置固定卡通人物...');
 
-    // 停止行走
-    stopWalking();
+  // 停止行走
+  stopWalking();
 
-    // 隐藏固定卡通人物
-    const fixedContainer = document.querySelector('#fixed-character-container');
-    if (fixedContainer) {
-      fixedContainer.setAttribute('visible', 'false');
-    }
-
-    appState.characterActivated = false;
-    appState.activationInProgress = false;
-    showNotification('已切换到标记模式', 'info');
+  const fixedContainer = document.querySelector('#fixed-character-container');
+  if (fixedContainer) {
+    fixedContainer.setAttribute('visible', 'false');
+    // 重置位置
+    fixedContainer.setAttribute('position', '0 -0.3 -1.5');
+    fixedContainer.setAttribute('rotation', '0 0 0');
   }
 
+  // 重置行走参数
+  walkingParams.direction = { x: 1, y: 0, z: 1 };
+
+  appState.characterActivated = false;
+  appState.activationInProgress = false;
+  showNotification('卡通人物已重置，请用标记重新激活', 'info');
   updateUI();
 }
 
-// 重置卡通人物
-function resetCharacter() {
-  if (appState.mode === 'fixed') {
-    console.log('重置固定卡通人物...');
+// 切换菜单显示/隐藏
+function toggleMenu() {
+  const controls = document.getElementById('controls');
+  const menuToggle = document.getElementById('menu-toggle');
 
-    // 停止行走
-    stopWalking();
+  appState.menuVisible = !appState.menuVisible;
 
-    const fixedContainer = document.querySelector('#fixed-character-container');
-    if (fixedContainer) {
-      fixedContainer.setAttribute('visible', 'false');
-      // 重置位置
-      fixedContainer.setAttribute('position', '0 -0.3 -1.5');
-      fixedContainer.setAttribute('rotation', '0 0 0');
-    }
-
-    // 重置行走参数
-    walkingParams.direction = { x: 1, y: 0, z: 1 };
-
-    appState.characterActivated = false;
-    appState.activationInProgress = false;
-    showNotification('卡通人物已重置，请用标记重新激活', 'info');
-    updateUI();
+  if (appState.menuVisible) {
+    controls.classList.remove('hidden');
+    menuToggle.textContent = '☰';
+    menuToggle.title = '隐藏菜单';
+  } else {
+    controls.classList.add('hidden');
+    menuToggle.textContent = '▲';
+    menuToggle.title = '显示菜单';
   }
 }
 
 // 更新UI状态
 function updateUI() {
-  const modeText = document.getElementById('mode-text');
   const infoText = document.getElementById('info-text');
-  const modeBtn = document.getElementById('mode-btn');
   const resetBtn = document.getElementById('reset-btn');
   const walkBtn = document.getElementById('walk-btn');
 
-  if (appState.mode === 'marker') {
-    modeText.textContent = '标记模式';
-    infoText.textContent = '将摄像头对准Hiro标记来显示卡通人物';
-    modeBtn.textContent = '切换到固定模式';
-    modeBtn.classList.remove('active');
+  if (appState.characterActivated) {
+    if (appState.isWalking) {
+      infoText.textContent = '卡通人物正在可视区域内自由漫步';
+    } else {
+      infoText.textContent = '卡通人物已固定，点击按钮开始行走';
+    }
+    resetBtn.disabled = false;
+    walkBtn.disabled = false;
+    walkBtn.textContent = appState.isWalking ? '停止行走' : '开始行走';
+  } else {
+    infoText.textContent = '将摄像头对准Hiro标记来激活卡通人物';
     resetBtn.disabled = true;
     walkBtn.disabled = true;
-  } else {
-    modeText.textContent = '固定模式';
-    if (appState.characterActivated) {
-      if (appState.isWalking) {
-        infoText.textContent = '卡通人物正在可视区域内自由漫步';
-      } else {
-        infoText.textContent = '卡通人物已固定，点击按钮开始行走';
-      }
-      resetBtn.disabled = false;
-      walkBtn.disabled = false;
-      walkBtn.textContent = appState.isWalking ? '停止行走' : '开始行走';
-    } else {
-      infoText.textContent = '将摄像头对准Hiro标记来激活卡通人物';
-      resetBtn.disabled = true;
-      walkBtn.disabled = true;
-      walkBtn.textContent = '开始/停止行走';
-    }
-    modeBtn.textContent = '切换到标记模式';
-    modeBtn.classList.add('active');
+    walkBtn.textContent = '开始/停止行走';
   }
 }
 
@@ -702,38 +661,6 @@ function hideMarker() {
 function changeColor() {
   currentColorIndex = (currentColorIndex + 1) % colors.length;
   const newColor = colors[currentColorIndex];
-
-  // 更新标记模式下的卡通人物颜色
-  const markerCharacterHead = document.querySelector('#marker-character-head');
-  if (markerCharacterHead) {
-    markerCharacterHead.setAttribute('color', newColor);
-
-    // 更新标记模式下的手臂和手部颜色
-    const markerCharacter = document.querySelector('#marker-character');
-    if (markerCharacter) {
-      const arms = markerCharacter.querySelectorAll('a-cylinder[animation]');
-      arms.forEach(arm => {
-        arm.setAttribute('color', newColor);
-      });
-
-      // 更新手部颜色
-      const hands = markerCharacter.querySelectorAll('a-sphere[position*="-0.12"], a-sphere[position*="0.12"]');
-      hands.forEach(hand => {
-        if (hand.getAttribute('position').includes('-0.01') || hand.getAttribute('position').includes('-0.01')) {
-          hand.setAttribute('color', newColor);
-        }
-      });
-    }
-
-    // 添加颜色变化动画
-    markerCharacterHead.setAttribute('animation__color', {
-      property: 'rotation',
-      from: '0 0 0',
-      to: '360 0 0',
-      dur: 1000,
-      easing: 'easeInOutQuad'
-    });
-  }
 
   // 更新固定模式下的卡通人物颜色
   const characterHead = document.querySelector('#character-head');
@@ -769,11 +696,6 @@ function changeColor() {
   console.log('卡通人物颜色已更改为:', newColor);
 }
 
-// 重置函数名更新
-function resetCylinder() {
-  resetCharacter();
-}
-
 // 显示通知消息
 function showNotification(message, type = 'info') {
   // 移除现有通知
@@ -789,38 +711,38 @@ function showNotification(message, type = 'info') {
 
   // 设置通知样式
   notification.style.cssText = `
-        position: fixed;
-        top: 70px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: ${getNotificationColor(type)};
-        color: white;
-        padding: 10px 20px;
-        border-radius: 5px;
-        z-index: 1500;
-        font-size: 14px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-        animation: slideDown 0.3s ease-out;
-        max-width: 300px;
-        text-align: center;
-    `;
+    position: fixed;
+    top: 70px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: ${getNotificationColor(type)};
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    z-index: 1500;
+    font-size: 14px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    animation: slideDown 0.3s ease-out;
+    max-width: 300px;
+    text-align: center;
+  `;
 
   // 添加动画样式
   if (!document.querySelector('#notification-styles')) {
     const style = document.createElement('style');
     style.id = 'notification-styles';
     style.textContent = `
-            @keyframes slideDown {
-                from {
-                    opacity: 0;
-                    transform: translateX(-50%) translateY(-20px);
-                }
-                to {
-                    opacity: 1;
-                    transform: translateX(-50%) translateY(0);
-                }
-            }
-        `;
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateX(-50%) translateY(-20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(-50%) translateY(0);
+        }
+      }
+    `;
     document.head.appendChild(style);
   }
 
@@ -892,21 +814,21 @@ document.addEventListener('keydown', function (e) {
         hideMarker();
       }
       break;
-    case 't':
-    case 'T':
-      toggleMode();
-      break;
     case 'r':
     case 'R':
-      if (appState.mode === 'fixed' && appState.characterActivated) {
+      if (appState.characterActivated) {
         resetCharacter();
       }
       break;
     case 'w':
     case 'W':
-      if (appState.mode === 'fixed' && appState.characterActivated) {
+      if (appState.characterActivated) {
         toggleWalking();
       }
+      break;
+    case 'h':
+    case 'H':
+      toggleMenu();
       break;
   }
 });

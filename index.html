@@ -38,6 +38,34 @@
         flex-wrap: wrap;
         justify-content: center;
         gap: 5px;
+        transition: transform 0.3s ease;
+      }
+
+      #controls.hidden {
+        transform: translateX(-50%) translateY(100%);
+      }
+
+      #menu-toggle {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        border: none;
+        padding: 12px;
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: 16px;
+        z-index: 1001;
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      #menu-toggle:hover {
+        background: rgba(0, 0, 0, 0.9);
       }
 
       button {
@@ -99,22 +127,25 @@
 
     <div id="info">
       <h4>AR 卡通人物展示</h4>
-      <p id="info-text">将摄像头对准Hiro标记来唤出卡通人物</p>
+      <p id="info-text">将摄像头对准Hiro标记来激活卡通人物</p>
     </div>
 
     <div id="mode-indicator">
-      <span id="mode-text">标记模式</span>
+      <span id="mode-text">固定模式</span>
     </div>
+
+    <!-- 菜单切换按钮 -->
+    <button id="menu-toggle" onclick="toggleMenu()" title="显示/隐藏菜单">
+      ☰
+    </button>
 
     <div id="controls">
       <button onclick="showMarker()">显示标记</button>
-      <button onclick="hideMarker()">隐藏标记</button>
       <button onclick="changeColor()">改变颜色</button>
-      <button onclick="toggleMode()" id="mode-btn">切换到固定模式</button>
       <button onclick="toggleWalking()" id="walk-btn" disabled>
-        开始/停止跟随
+        开始/停止行走
       </button>
-      <button onclick="resetCylinder()" id="reset-btn" disabled>
+      <button onclick="resetCharacter()" id="reset-btn" disabled>
         重置卡通人物
       </button>
     </div>
@@ -361,7 +392,7 @@
 
       <!-- 相机 -->
       <a-entity camera id="main-camera">
-        <!-- 固定圆柱体将通过JavaScript动态添加到这里 -->
+        <!-- 固定卡通人物将通过JavaScript动态添加到这里 -->
       </a-entity>
     </a-scene>
 
@@ -387,7 +418,7 @@
         alt="Hiro Marker"
         style="width: 200px; height: 200px; border: 2px solid #000"
       />
-      <p>将摄像头对准此标记来唤出卡通人物</p>
+      <p>将摄像头对准此标记来激活卡通人物</p>
       <button onclick="hideMarker()">关闭</button>
     </div>
 
