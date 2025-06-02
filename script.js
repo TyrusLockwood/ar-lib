@@ -15,20 +15,33 @@ let appState = {
 
 // 行走参数
 const walkingParams = {
-  speed: 0.015, // 移动速度 - 稍微减慢
+  speed: 0.012, // 移动速度
   boundary: {
-    x: 1.2, // X轴边界 - 从2减小到1.2
-    y: 0.6, // Y轴边界 - 从1减小到0.6
-    z: 0.8  // Z轴边界 - 从1减小到0.8
+    x: 0.8, // X轴边界 - 限制在可视区域内
+    y: 0.4, // Y轴边界 - 限制在可视区域内
+    z: 0.6  // Z轴边界 - 限制在可视区域内
   },
   direction: {
     x: 1,
     y: 0,
     z: 1
   },
-  changeDirectionInterval: 3000, // 改变方向的间隔（毫秒）
+  changeDirectionInterval: 4000, // 改变方向的间隔（毫秒）
   walkingInterval: null, // 行走定时器
   directionChangeInterval: null // 方向改变定时器
+};
+
+// 跟随参数
+const followParams = {
+  sensitivity: 1.5, // 跟随灵敏度
+  smoothing: 0.2, // 移动平滑度
+  maxDistance: 1.0, // 最大跟随距离
+  followInterval: null, // 跟随定时器
+  lastDeviceOrientation: { alpha: 0, beta: 0, gamma: 0 }, // 上次设备方向
+  targetPosition: { x: 0, y: -0.3, z: -1.5 }, // 目标位置
+  currentPosition: { x: 0, y: -0.3, z: -1.5 }, // 当前位置
+  hasOrientationPermission: false, // 是否有方向权限
+  orientationSupported: false // 是否支持方向传感器
 };
 
 // 等待页面加载完成
@@ -379,7 +392,7 @@ function activateFixedCharacter() {
 
     appState.characterActivated = true;
     appState.activationInProgress = false;
-    showNotification('卡通人物已激活！现在开始自由行走，可以移开标记了', 'success');
+    showNotification('卡通人物已激活！现在开始在可视区域内自由行走', 'success');
     updateUI();
 
     // 开始行走
@@ -392,7 +405,7 @@ function activateFixedCharacter() {
     // 3秒后提示用户可以移开标记
     setTimeout(() => {
       if (appState.mode === 'fixed' && appState.characterActivated) {
-        showNotification('现在可以移开标记，卡通人物将继续漫步！', 'info');
+        showNotification('现在可以移开标记，卡通人物将继续在可视区域内漫步！', 'info');
       }
     }, 3000);
   } else {
@@ -411,7 +424,7 @@ function startWalking() {
   const fixedContainer = document.querySelector('#fixed-character-container');
   if (!fixedContainer) return;
 
-  // 添加行走时的腿部动画
+  // 添加行走时的动画
   addWalkingAnimations();
 
   // 开始移动
@@ -424,8 +437,8 @@ function startWalking() {
     changeWalkingDirection();
   }, walkingParams.changeDirectionInterval);
 
-  updateUI(); // 更新UI状态
-  showNotification('卡通人物开始自由漫步！', 'info');
+  updateUI();
+  showNotification('卡通人物开始在可视区域内自由漫步！', 'info');
 }
 
 // 停止行走
@@ -449,7 +462,7 @@ function stopWalking() {
   // 移除行走动画
   removeWalkingAnimations();
 
-  updateUI(); // 更新UI状态
+  updateUI();
   showNotification('卡通人物停止漫步', 'info');
 }
 
@@ -461,20 +474,20 @@ function addWalkingAnimations() {
   const rightArm = document.querySelector('#right-arm');
 
   if (leftLeg) {
-    leftLeg.setAttribute('animation__walk', 'property: rotation; to: 15 0 0; dir: alternate; loop: true; dur: 800');
+    leftLeg.setAttribute('animation__walk', 'property: rotation; to: 12 0 0; dir: alternate; loop: true; dur: 1000');
   }
 
   if (rightLeg) {
-    rightLeg.setAttribute('animation__walk', 'property: rotation; to: -15 0 0; dir: alternate; loop: true; dur: 800');
+    rightLeg.setAttribute('animation__walk', 'property: rotation; to: -12 0 0; dir: alternate; loop: true; dur: 1000');
   }
 
-  // 加强手臂摆动
+  // 行走时的手臂摆动
   if (leftArm) {
-    leftArm.setAttribute('animation', 'property: rotation; to: 0 0 -60; dir: alternate; loop: true; dur: 800');
+    leftArm.setAttribute('animation', 'property: rotation; to: 0 0 -50; dir: alternate; loop: true; dur: 1000');
   }
 
   if (rightArm) {
-    rightArm.setAttribute('animation', 'property: rotation; to: 0 0 60; dir: alternate; loop: true; dur: 800');
+    rightArm.setAttribute('animation', 'property: rotation; to: 0 0 50; dir: alternate; loop: true; dur: 1000');
   }
 }
 
@@ -519,19 +532,19 @@ function updateCharacterPosition() {
   y += walkingParams.direction.y * walkingParams.speed;
   z += walkingParams.direction.z * walkingParams.speed;
 
-  // 检查边界并反弹
+  // 检查边界并反弹 - 限制在可视区域内
   if (Math.abs(x) > walkingParams.boundary.x) {
     walkingParams.direction.x *= -1;
     x = Math.sign(x) * walkingParams.boundary.x;
   }
 
-  // 调整Y轴边界检查 - 保持在合理的高度范围内
+  // Y轴边界检查 - 保持在合理的高度范围内
   if (y > -0.3 + walkingParams.boundary.y || y < -0.3 - walkingParams.boundary.y) {
     walkingParams.direction.y *= -1;
     y = Math.max(-0.3 - walkingParams.boundary.y, Math.min(-0.3 + walkingParams.boundary.y, y));
   }
 
-  // 调整Z轴边界检查 - 相对于初始位置-1.5
+  // Z轴边界检查 - 相对于初始位置-1.5，保持在可视区域
   if (Math.abs(z + 1.5) > walkingParams.boundary.z) {
     walkingParams.direction.z *= -1;
     z = Math.sign(z + 1.5) * walkingParams.boundary.z - 1.5;
@@ -549,7 +562,7 @@ function updateCharacterPosition() {
 function changeWalkingDirection() {
   // 随机改变方向
   walkingParams.direction.x = (Math.random() - 0.5) * 2;
-  walkingParams.direction.y = (Math.random() - 0.5) * 0.5; // Y轴变化较小
+  walkingParams.direction.y = (Math.random() - 0.5) * 0.3; // Y轴变化较小
   walkingParams.direction.z = (Math.random() - 0.5) * 2;
 
   // 标准化方向向量
@@ -589,6 +602,9 @@ function toggleMode() {
     // 切换到标记模式
     appState.mode = 'marker';
 
+    // 停止行走
+    stopWalking();
+
     // 隐藏固定卡通人物
     const fixedContainer = document.querySelector('#fixed-character-container');
     if (fixedContainer) {
@@ -619,6 +635,9 @@ function resetCharacter() {
       fixedContainer.setAttribute('rotation', '0 0 0');
     }
 
+    // 重置行走参数
+    walkingParams.direction = { x: 1, y: 0, z: 1 };
+
     appState.characterActivated = false;
     appState.activationInProgress = false;
     showNotification('卡通人物已重置，请用标记重新激活', 'info');
@@ -645,7 +664,7 @@ function updateUI() {
     modeText.textContent = '固定模式';
     if (appState.characterActivated) {
       if (appState.isWalking) {
-        infoText.textContent = '卡通人物正在自由漫步中，可以移开标记';
+        infoText.textContent = '卡通人物正在可视区域内自由漫步';
       } else {
         infoText.textContent = '卡通人物已固定，点击按钮开始行走';
       }
