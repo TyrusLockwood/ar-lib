@@ -3,9 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AR 卡通人物展示</title>
+    <title>AR Lottie动画展示</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
     <style>
       body {
         margin: 0;
@@ -35,37 +36,8 @@
         border-radius: 5px;
         z-index: 1000;
         display: flex;
-        flex-wrap: wrap;
         justify-content: center;
-        gap: 5px;
-        transition: transform 0.3s ease;
-      }
-
-      #controls.hidden {
-        transform: translateX(-50%) translateY(100%);
-      }
-
-      #menu-toggle {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        background: rgba(0, 0, 0, 0.8);
-        color: white;
-        border: none;
-        padding: 12px;
-        border-radius: 50%;
-        cursor: pointer;
-        font-size: 16px;
-        z-index: 1001;
-        width: 50px;
-        height: 50px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-
-      #menu-toggle:hover {
-        background: rgba(0, 0, 0, 0.9);
+        gap: 10px;
       }
 
       button {
@@ -73,19 +45,13 @@
         color: white;
         border: none;
         padding: 8px 16px;
-        margin: 2px;
         border-radius: 5px;
         cursor: pointer;
         font-size: 14px;
-        white-space: nowrap;
       }
 
       button:hover {
         background: #45a049;
-      }
-
-      button.active {
-        background: #ff6b6b;
       }
 
       button:disabled {
@@ -106,16 +72,20 @@
         text-align: center;
       }
 
-      #mode-indicator {
+      /* Lottie动画容器样式 - 固定在屏幕中央 */
+      #lottie-character {
+        width: 300px;
+        height: 300px;
         position: fixed;
-        top: 10px;
-        right: 10px;
-        background: rgba(0, 0, 0, 0.7);
-        color: white;
-        padding: 8px 12px;
-        border-radius: 5px;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        display: none;
         z-index: 1000;
-        font-size: 12px;
+        pointer-events: none;
+        background: transparent;
+        border-radius: 10px;
+        overflow: hidden;
       }
     </style>
   </head>
@@ -126,29 +96,19 @@
     </div>
 
     <div id="info">
-      <h4>AR 卡通人物展示</h4>
-      <p id="info-text">将摄像头对准Hiro标记来激活卡通人物</p>
+      <h4>AR Lottie动画展示</h4>
+      <p id="info-text">将摄像头对准Hiro标记来激活Lottie动画</p>
     </div>
-
-    <div id="mode-indicator">
-      <span id="mode-text">固定模式</span>
-    </div>
-
-    <!-- 菜单切换按钮 -->
-    <button id="menu-toggle" onclick="toggleMenu()" title="显示/隐藏菜单">
-      ☰
-    </button>
 
     <div id="controls">
       <button onclick="showMarker()">显示标记</button>
-      <button onclick="changeColor()">改变颜色</button>
-      <button onclick="toggleWalking()" id="walk-btn" disabled>
-        开始/停止行走
-      </button>
       <button onclick="resetCharacter()" id="reset-btn" disabled>
-        重置卡通人物
+        重置动画
       </button>
     </div>
+
+    <!-- Lottie动画容器 -->
+    <div id="lottie-character"></div>
 
     <!-- AR场景 -->
     <a-scene
@@ -158,242 +118,21 @@
       renderer="logarithmicDepthBuffer: true;"
       loading-screen="enabled: false"
     >
-      <!-- 资源定义 -->
-      <a-assets>
-        <a-mixin
-          id="cylinder-material"
-          material="color: #FF6B6B; metalness: 0.3; roughness: 0.4; transparent: true; opacity: 0.9"
-        ></a-mixin>
-      </a-assets>
-
       <!-- Hiro标记 -->
       <a-marker preset="hiro" id="hiro-marker">
-        <!-- 卡通人物容器 -->
-        <a-entity id="marker-character" position="0 0.2 0">
-          <!-- 头部（球体）- 缩小1/3 -->
-          <a-sphere
-            id="marker-character-head"
-            radius="0.1"
-            position="0 0.17 0"
-            color="#FF6B6B"
-            metalness="0.1"
-            roughness="0.6"
-          >
-            <!-- 眼睛 - 更大更可爱 -->
-            <a-sphere
-              radius="0.018"
-              position="-0.035 0.035 0.08"
-              color="#000000"
-            ></a-sphere>
-            <a-sphere
-              radius="0.018"
-              position="0.035 0.035 0.08"
-              color="#000000"
-            ></a-sphere>
-
-            <!-- 眼睛高光 -->
-            <a-sphere
-              radius="0.008"
-              position="-0.03 0.04 0.085"
-              color="#FFFFFF"
-            ></a-sphere>
-            <a-sphere
-              radius="0.008"
-              position="0.04 0.04 0.085"
-              color="#FFFFFF"
-            ></a-sphere>
-
-            <!-- 嘴巴 - 更小更可爱 -->
-            <a-torus
-              radius="0.025"
-              radius-tubular="0.003"
-              position="0 -0.015 0.08"
-              rotation="0 0 0"
-              color="#FF4444"
-            ></a-torus>
-
-            <!-- 腮红 -->
-            <a-sphere
-              radius="0.015"
-              position="-0.06 0.01 0.075"
-              color="#FFB6C1"
-              opacity="0.6"
-              transparent="true"
-            ></a-sphere>
-            <a-sphere
-              radius="0.015"
-              position="0.06 0.01 0.075"
-              color="#FFB6C1"
-              opacity="0.6"
-              transparent="true"
-            ></a-sphere>
-          </a-sphere>
-
-          <!-- 身体（圆柱体）- 缩小1/3，更苗条 -->
-          <a-cylinder
-            id="marker-character-body"
-            radius="0.055"
-            height="0.2"
-            position="0 -0.03 0"
-            color="#4ECDC4"
-            metalness="0.1"
-            roughness="0.6"
-          >
-            <!-- 身体装饰 - 纽扣 -->
-            <a-sphere
-              radius="0.008"
-              position="0 0.05 0.056"
-              color="#FFD700"
-            ></a-sphere>
-            <a-sphere
-              radius="0.008"
-              position="0 0.02 0.056"
-              color="#FFD700"
-            ></a-sphere>
-            <a-sphere
-              radius="0.008"
-              position="0 -0.01 0.056"
-              color="#FFD700"
-            ></a-sphere>
-          </a-cylinder>
-
-          <!-- 手臂（左）- 缩小1/3，更细 -->
-          <a-cylinder
-            radius="0.013"
-            height="0.1"
-            position="-0.08 0.035 0"
-            rotation="0 0 30"
-            color="#FF6B6B"
-            animation="property: rotation; to: 0 0 -30; dir: alternate; loop: true; dur: 2000"
-          ></a-cylinder>
-
-          <!-- 手臂（右）- 缩小1/3，更细 -->
-          <a-cylinder
-            radius="0.013"
-            height="0.1"
-            position="0.08 0.035 0"
-            rotation="0 0 -30"
-            color="#FF6B6B"
-            animation="property: rotation; to: 0 0 30; dir: alternate; loop: true; dur: 2000"
-          ></a-cylinder>
-
-          <!-- 手部 -->
-          <a-sphere
-            radius="0.015"
-            position="-0.12 -0.01 0"
-            color="#FF6B6B"
-          ></a-sphere>
-          <a-sphere
-            radius="0.015"
-            position="0.12 -0.01 0"
-            color="#FF6B6B"
-          ></a-sphere>
-
-          <!-- 腿部（左）- 缩小1/3 -->
-          <a-cylinder
-            radius="0.017"
-            height="0.13"
-            position="-0.027 -0.2 0"
-            color="#45B7D1"
-          ></a-cylinder>
-
-          <!-- 腿部（右）- 缩小1/3 -->
-          <a-cylinder
-            radius="0.017"
-            height="0.13"
-            position="0.027 -0.2 0"
-            color="#45B7D1"
-          ></a-cylinder>
-
-          <!-- 脚部 - 可爱的小鞋子 -->
-          <a-box
-            width="0.04"
-            height="0.015"
-            depth="0.06"
-            position="-0.027 -0.275 0.01"
-            color="#8B4513"
-          ></a-box>
-          <a-box
-            width="0.04"
-            height="0.015"
-            depth="0.06"
-            position="0.027 -0.275 0.01"
-            color="#8B4513"
-          ></a-box>
-
-          <!-- 帽子 - 缩小1/3，更精致 -->
-          <a-cone
-            radius-bottom="0.08"
-            radius-top="0.013"
-            height="0.1"
-            position="0 0.23 0"
-            color="#FF9800"
-            animation="property: rotation; to: 0 360 0; loop: true; dur: 8000"
-          >
-            <!-- 帽子装饰 - 小星星 -->
-            <a-cone
-              radius-bottom="0.01"
-              radius-top="0.005"
-              height="0.02"
-              position="0 0.05 0"
-              color="#FFD700"
-              animation="property: rotation; to: 0 -360 0; loop: true; dur: 4000"
-            ></a-cone>
-          </a-cone>
-
-          <!-- 添加文字标签 -->
-          <a-text
-            value="AR 小伙伴"
-            position="0 0.4 0"
-            align="center"
-            color="#FFFFFF"
-            scale="0.3 0.3 0.3"
-            animation="property: position; to: 0 0.45 0; dir: alternate; loop: true; dur: 3000"
-          ></a-text>
-
-          <!-- 装饰粒子 - 缩小并调整位置 -->
-          <a-sphere
-            position="0.13 0.27 0.07"
-            radius="0.013"
-            color="#FFD93D"
-            animation="property: position; to: 0.2 0.33 0.13; dir: alternate; loop: true; dur: 2500"
-          ></a-sphere>
-
-          <a-sphere
-            position="-0.13 0.27 0.07"
-            radius="0.013"
-            color="#FF6B6B"
-            animation="property: position; to: -0.2 0.33 0.13; dir: alternate; loop: true; dur: 2800"
-          ></a-sphere>
-
-          <!-- 光环效果 -->
-          <a-ring
-            radius-inner="0.12"
-            radius-outer="0.14"
-            position="0 0.3 0"
-            rotation="90 0 0"
-            color="#FFD700"
-            opacity="0.3"
-            transparent="true"
-            animation="property: rotation; to: 90 360 0; loop: true; dur: 6000"
-          ></a-ring>
-
-          <!-- 整体弹跳动画 -->
-          <a-animation
-            attribute="position"
-            to="0 0.25 0"
-            direction="alternate"
-            repeat="indefinite"
-            dur="4000"
-            easing="ease-in-out-quad"
-          ></a-animation>
-        </a-entity>
+        <!-- 标记激活提示 -->
+        <a-text 
+          value="扫描此标记激活动画" 
+          position="0 0.5 0" 
+          align="center" 
+          color="#FFFFFF" 
+          scale="0.5 0.5 0.5"
+          visible="true">
+        </a-text>
       </a-marker>
 
       <!-- 相机 -->
-      <a-entity camera id="main-camera">
-        <!-- 固定卡通人物将通过JavaScript动态添加到这里 -->
-      </a-entity>
+      <a-entity camera id="main-camera"></a-entity>
     </a-scene>
 
     <!-- 标记显示区域 -->
@@ -418,7 +157,7 @@
         alt="Hiro Marker"
         style="width: 200px; height: 200px; border: 2px solid #000"
       />
-      <p>将摄像头对准此标记来激活卡通人物</p>
+      <p>将摄像头对准此标记来激活Lottie动画</p>
       <button onclick="hideMarker()">关闭</button>
     </div>
 
