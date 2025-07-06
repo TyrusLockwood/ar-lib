@@ -4,11 +4,32 @@
 let appState = {
   characterActivated: false, // Lottie动画是否已被激活
   markerFound: false, // 标记是否被发现
-  activationInProgress: false // 是否正在激活过程中
+  activationInProgress: false, // 是否正在激活过程中
+  currentAnimation: null, // 当前激活的动画文件
+  currentMarker: null // 当前激活的标记ID
 };
 
 // Lottie动画实例
 let lottieInstance = null;
+
+// 动画配置映射
+const animationConfig = {
+  'hiro-marker': {
+    file: 'assets/character.json',
+    name: '动画1',
+    description: 'Hiro标记动画'
+  },
+  'letter-marker': {
+    file: 'assets/character-1.json',
+    name: '动画2', 
+    description: 'Letter标记动画'
+  },
+  'kanji-marker': {
+    file: 'assets/character-2.json',
+    name: '动画3',
+    description: 'Kanji标记动画'
+  }
+};
 
 // 等待页面加载完成
 document.addEventListener('DOMContentLoaded', function () {
@@ -64,38 +85,47 @@ function initializeLottieCharacter() {
 
 // 设置AR事件监听
 function setupAREvents() {
-  const marker = document.querySelector('#hiro-marker');
-
-  if (marker) {
+  // 获取所有标记
+  const markers = document.querySelectorAll('a-marker');
+  
+  markers.forEach(marker => {
+    const markerId = marker.id;
+    
     // 标记被发现时
     marker.addEventListener('markerFound', function () {
-      console.log('标记已发现！');
+      console.log(`标记 ${markerId} 已发现！`);
       appState.markerFound = true;
 
+      // 如果当前没有动画激活，或者扫描的是不同的标记，则激活新动画
       if (!appState.characterActivated && !appState.activationInProgress) {
-        // 标记用于激活Lottie动画
-        activateLottieCharacter();
+        // 首次激活动画
+        activateLottieCharacter(markerId);
+      } else if (appState.characterActivated && appState.currentMarker !== markerId) {
+        // 切换到不同的动画
+        console.log(`切换到新标记: ${markerId}`);
+        switchToNewAnimation(markerId);
       }
     });
 
     // 标记丢失时 - 动画保持显示
     marker.addEventListener('markerLost', function () {
-      console.log('标记已丢失！');
+      console.log(`标记 ${markerId} 已丢失！`);
       appState.markerFound = false;
 
       // 如果动画已激活，标记丢失不影响显示
       if (appState.characterActivated) {
-        showNotification('动画已固定，可以移开标记了！', 'info');
+        const config = animationConfig[markerId];
+        showNotification(`${config.name}已固定，可以移开标记了！`, 'info');
       }
     });
-  }
+  });
 }
 
 // 激活Lottie动画
-function activateLottieCharacter() {
+function activateLottieCharacter(markerId) {
   if (appState.activationInProgress) return;
 
-  console.log('激活Lottie动画...');
+  console.log(`激活Lottie动画... ${markerId}`);
   appState.activationInProgress = true;
 
   const lottieContainer = document.getElementById('lottie-character');
@@ -108,21 +138,55 @@ function activateLottieCharacter() {
     lottieContainer.style.animation = 'fadeInScale 1s ease-out';
     
     // 加载并播放Lottie动画
-    loadLottieAnimation();
+    loadLottieAnimation(markerId);
     
     appState.characterActivated = true;
+    appState.currentAnimation = animationConfig[markerId].file;
     appState.activationInProgress = false;
-    showNotification('Lottie动画已激活！现在可以移开标记了', 'success');
+    
+    const config = animationConfig[markerId];
+    showNotification(`${config.name}已激活！现在可以移开标记了`, 'success');
     updateUI();
 
     // 3秒后提示用户可以移开标记
     setTimeout(() => {
       if (appState.characterActivated) {
-        showNotification('动画已固定在屏幕中央，可以自由移动手机！', 'info');
+        showNotification(`${config.name}已固定在屏幕中央，可以自由移动手机！`, 'info');
       }
     }, 3000);
 
-    console.log('Lottie动画激活成功');
+    console.log(`${config.name}激活成功`);
+  } else {
+    console.error('找不到Lottie容器');
+    appState.activationInProgress = false;
+  }
+}
+
+// 切换到新动画
+function switchToNewAnimation(markerId) {
+  if (appState.activationInProgress) return;
+
+  console.log(`切换到新动画: ${markerId}`);
+  appState.activationInProgress = true;
+
+  const lottieContainer = document.getElementById('lottie-character');
+  
+  if (lottieContainer) {
+    // 添加切换动画效果
+    lottieContainer.style.animation = 'fadeInScale 0.5s ease-out';
+    
+    // 加载并播放新的Lottie动画
+    loadLottieAnimation(markerId);
+    
+    appState.currentAnimation = animationConfig[markerId].file;
+    appState.currentMarker = markerId;
+    appState.activationInProgress = false;
+    
+    const config = animationConfig[markerId];
+    showNotification(`已切换到${config.name}！`, 'success');
+    updateUI();
+
+    console.log(`切换到${config.name}成功`);
   } else {
     console.error('找不到Lottie容器');
     appState.activationInProgress = false;
@@ -130,7 +194,7 @@ function activateLottieCharacter() {
 }
 
 // 加载Lottie动画
-function loadLottieAnimation() {
+function loadLottieAnimation(markerId) {
   const lottieContainer = document.getElementById('lottie-character');
   
   if (!lottieContainer) return;
@@ -141,6 +205,12 @@ function loadLottieAnimation() {
     lottieInstance = null;
   }
 
+  const config = animationConfig[markerId];
+  if (!config) {
+    console.error(`未找到标记 ${markerId} 的配置`);
+    return;
+  }
+
   try {
     // 创建新的Lottie实例
     lottieInstance = lottie.loadAnimation({
@@ -148,24 +218,27 @@ function loadLottieAnimation() {
       renderer: 'svg',
       loop: true,
       autoplay: true,
-      path: 'assets/character.json'
+      path: config.file
     });
 
     // 监听动画加载完成
     lottieInstance.addEventListener('DOMLoaded', function() {
-      console.log('Lottie动画加载完成');
-      showNotification('Lottie动画加载成功！', 'success');
+      console.log(`${config.name}加载完成`);
+      // 只有在首次加载时才显示加载成功通知，避免切换时重复显示
+      if (!appState.characterActivated) {
+        showNotification(`${config.name}加载成功！`, 'success');
+      }
     });
 
     // 监听动画错误
     lottieInstance.addEventListener('error', function(error) {
-      console.error('Lottie动画加载失败:', error);
-      showNotification('Lottie动画加载失败，请检查文件路径', 'error');
+      console.error(`${config.name}加载失败:`, error);
+      showNotification(`${config.name}加载失败，请检查文件路径`, 'error');
     });
 
   } catch (error) {
-    console.error('创建Lottie实例失败:', error);
-    showNotification('Lottie动画初始化失败', 'error');
+    console.error(`创建${config.name}实例失败:`, error);
+    showNotification(`${config.name}初始化失败`, 'error');
   }
 }
 
@@ -185,6 +258,8 @@ function resetCharacter() {
 
   appState.characterActivated = false;
   appState.activationInProgress = false;
+  appState.currentAnimation = null;
+  appState.currentMarker = null;
   showNotification('Lottie动画已重置，请用标记重新激活', 'info');
   updateUI();
 }
@@ -195,10 +270,12 @@ function updateUI() {
   const resetBtn = document.getElementById('reset-btn');
 
   if (appState.characterActivated) {
-    infoText.textContent = 'Lottie动画已固定在屏幕中央';
+    const config = appState.currentMarker ? animationConfig[appState.currentMarker] : null;
+    const animationName = config ? config.name : 'Lottie动画';
+    infoText.textContent = `${animationName}已固定在屏幕中央`;
     resetBtn.disabled = false;
   } else {
-    infoText.textContent = '将摄像头对准Hiro标记来激活Lottie动画';
+    infoText.textContent = '将摄像头对准任意标记来激活对应的Lottie动画';
     resetBtn.disabled = true;
   }
 }

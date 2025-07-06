@@ -118,11 +118,37 @@
       renderer="logarithmicDepthBuffer: true;"
       loading-screen="enabled: false"
     >
-      <!-- Hiro标记 -->
-      <a-marker preset="hiro" id="hiro-marker">
+      <!-- Hiro标记 - 激活character.json -->
+      <a-marker preset="hiro" id="hiro-marker" data-animation="character.json">
         <!-- 标记激活提示 -->
         <a-text 
-          value="扫描此标记激活动画" 
+          value="扫描此标记激活动画1" 
+          position="0 0.5 0" 
+          align="center" 
+          color="#FFFFFF" 
+          scale="0.5 0.5 0.5"
+          visible="true">
+        </a-text>
+      </a-marker>
+
+      <!-- Letter标记 - 激活character-1.json -->
+      <a-marker type="pattern" url="assets/pattern-letter.patt" id="letter-marker" data-animation="character-1.json">
+        <!-- 标记激活提示 -->
+        <a-text 
+          value="扫描此标记激活动画2" 
+          position="0 0.5 0" 
+          align="center" 
+          color="#FFFFFF" 
+          scale="0.5 0.5 0.5"
+          visible="true">
+        </a-text>
+      </a-marker>
+
+      <!-- Kanji标记 - 激活character-2.json -->
+      <a-marker type="pattern" url="assets/pattern-kanji.patt" id="kanji-marker" data-animation="character-2.json">
+        <!-- 标记激活提示 -->
+        <a-text 
+          value="扫描此标记激活动画3" 
           position="0 0.5 0" 
           align="center" 
           color="#FFFFFF" 
@@ -149,16 +175,39 @@
         border-radius: 10px;
         z-index: 3000;
         text-align: center;
+        max-height: 80vh;
+        overflow-y: auto;
       "
     >
-      <h3>Hiro 标记</h3>
-      <img
-        src="https://raw.githubusercontent.com/AR-js-org/AR.js/master/data/images/hiro.png"
-        alt="Hiro Marker"
-        style="width: 200px; height: 200px; border: 2px solid #000"
-      />
-      <p>将摄像头对准此标记来激活Lottie动画</p>
-      <button onclick="hideMarker()">关闭</button>
+      <h3>可用标记</h3>
+      <div style="display: flex; flex-direction: column; gap: 20px; align-items: center;">
+        <div>
+          <h4>Hiro 标记 - 动画1</h4>
+          <img
+            src="https://raw.githubusercontent.com/AR-js-org/AR.js/master/data/images/hiro.png"
+            alt="Hiro Marker"
+            style="width: 150px; height: 150px; border: 2px solid #000"
+          />
+          <p>扫描此标记激活第一个Lottie动画</p>
+        </div>
+        
+        <div>
+          <h4>Letter 标记 - 动画2</h4>
+          <div style="width: 150px; height: 150px; border: 2px solid #000; background: #f0f0f0; display: flex; align-items: center; justify-content: center;">
+            <span style="font-size: 24px; color: #333;">Letter</span>
+          </div>
+          <p>扫描此标记激活第二个Lottie动画</p>
+        </div>
+        
+        <div>
+          <h4>Kanji 标记 - 动画3</h4>
+          <div style="width: 150px; height: 150px; border: 2px solid #000; background: #f0f0f0; display: flex; align-items: center; justify-content: center;">
+            <span style="font-size: 24px; color: #333;">漢字</span>
+          </div>
+          <p>扫描此标记激活第三个Lottie动画</p>
+        </div>
+      </div>
+      <button onclick="hideMarker()" style="margin-top: 20px;">关闭</button>
     </div>
 
     <script src="script.js"></script>

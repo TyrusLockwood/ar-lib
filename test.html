@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多标记多动画测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .marker-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin: 10px 0;
+        }
+        .marker-preview {
+            width: 100px;
+            height: 100px;
+            border: 2px solid #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f0f0f0;
+        }
+        .animation-info {
+            flex: 1;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>多标记多动画功能测试</h1>
+    
+    <div class="test-section">
+        <h2>功能说明</h2>
+        <p>本项目现在支持扫描不同的标记来激活不同的Lottie动画：</p>
+        <ul>
+            <li><strong>Hiro标记</strong> → 激活 character.json 动画</li>
+            <li><strong>Letter标记</strong> → 激活 character-1.json 动画</li>
+            <li><strong>Kanji标记</strong> → 激活 character-2.json 动画</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>标记预览</h2>
+        
+        <div class="marker-info">
+            <div class="marker-preview">
+                <img src="https://raw.githubusercontent.com/AR-js-org/AR.js/master/data/images/hiro.png" 
+                     alt="Hiro" style="width: 80px; height: 80px;">
+            </div>
+            <div class="animation-info">
+                <h3>Hiro标记 - 动画1</h3>
+                <p><strong>文件：</strong>assets/character.json</p>
+                <p><strong>描述：</strong>标准Hiro标记，激活第一个Lottie动画</p>
+            </div>
+        </div>
+
+        <div class="marker-info">
+            <div class="marker-preview">
+                <span style="font-size: 20px; color: #333;">Letter</span>
+            </div>
+            <div class="animation-info">
+                <h3>Letter标记 - 动画2</h3>
+                <p><strong>文件：</strong>assets/pattern-letter.patt</p>
+                <p><strong>动画：</strong>assets/character-1.json</p>
+                <p><strong>描述：</strong>字母标记，激活第二个Lottie动画</p>
+            </div>
+        </div>
+
+        <div class="marker-info">
+            <div class="marker-preview">
+                <span style="font-size: 20px; color: #333;">漢字</span>
+            </div>
+            <div class="animation-info">
+                <h3>Kanji标记 - 动画3</h3>
+                <p><strong>文件：</strong>assets/pattern-kanji.patt</p>
+                <p><strong>动画：</strong>assets/character-2.json</p>
+                <p><strong>描述：</strong>汉字标记，激活第三个Lottie动画</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>使用方法</h2>
+        <ol>
+            <li>点击下方按钮启动AR应用</li>
+            <li>允许摄像头权限</li>
+            <li>将摄像头对准任意标记</li>
+            <li>对应的Lottie动画将在屏幕中央显示</li>
+            <li>可以移开标记，动画会保持显示</li>
+            <li>按"R"键或点击重置按钮来重置动画</li>
+        </ol>
+        
+        <button onclick="window.open('http://localhost:8000', '_blank')">启动AR应用</button>
+        <button onclick="window.open('http://localhost:8000/index.html', '_blank')">直接打开主页</button>
+    </div>
+
+    <div class="test-section">
+        <h2>技术实现</h2>
+        <ul>
+            <li><strong>多标记支持：</strong>使用querySelectorAll获取所有a-marker元素</li>
+            <li><strong>动画映射：</strong>通过animationConfig对象管理标记和动画的对应关系</li>
+            <li><strong>状态管理：</strong>扩展appState以跟踪当前激活的标记和动画</li>
+            <li><strong>动态加载：</strong>根据扫描的标记动态加载对应的动画文件</li>
+            <li><strong>用户反馈：</strong>显示具体是哪个动画被激活</li>
+        </ul>
+    </div>
+
+    <script>
+        // 检查服务器状态
+        fetch('http://localhost:8000')
+            .then(response => {
+                if (response.ok) {
+                    console.log('服务器运行正常');
+                }
+            })
+            .catch(error => {
+                console.log('服务器未运行，请先启动服务器');
+                document.body.innerHTML += '<div style="color: red; padding: 20px; background: #ffe6e6; border-radius: 5px; margin: 20px 0;"><strong>注意：</strong>服务器未运行，请先运行 <code>python3 -m http.server 8000</code> 命令</div>';
+            });
+    </script>
+</body>
+</html> 

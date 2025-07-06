@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>动画切换测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .status {
+            background: #f0f8ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>动画切换功能测试</h1>
+    
+    <div class="test-section">
+        <h2>测试说明</h2>
+        <p>这个页面用于测试多标记动画切换功能是否正常工作。</p>
+        
+        <div class="status success">
+            <strong>✅ 已修复的问题：</strong>
+            <ul>
+                <li>添加了动画切换逻辑</li>
+                <li>扫描新标记时会切换到对应的动画</li>
+                <li>避免了重复的加载通知</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>测试步骤</h2>
+        <ol>
+            <li>点击下方按钮启动AR应用</li>
+            <li>扫描第一个标记（如Hiro标记）</li>
+            <li>确认第一个动画显示</li>
+            <li>移开第一个标记</li>
+            <li>扫描第二个标记（如Letter标记）</li>
+            <li>确认动画切换到第二个动画</li>
+            <li>重复测试其他标记组合</li>
+        </ol>
+        
+        <button onclick="window.open('http://localhost:8000', '_blank')">启动AR应用</button>
+        <button onclick="window.open('http://localhost:8000/index.html', '_blank')">直接打开主页</button>
+    </div>
+
+    <div class="test-section">
+        <h2>技术实现细节</h2>
+        
+        <h3>1. 动画切换逻辑</h3>
+        <div class="log">
+// 修改前的问题代码
+if (!appState.characterActivated && !appState.activationInProgress) {
+  activateLottieCharacter(markerId);
+}
+
+// 修改后的解决方案
+if (!appState.characterActivated && !appState.activationInProgress) {
+  // 首次激活动画
+  activateLottieCharacter(markerId);
+} else if (appState.characterActivated && appState.currentMarker !== markerId) {
+  // 切换到不同的动画
+  switchToNewAnimation(markerId);
+}
+        </div>
+
+        <h3>2. 新增的切换函数</h3>
+        <div class="log">
+function switchToNewAnimation(markerId) {
+  if (appState.activationInProgress) return;
+  
+  console.log(`切换到新动画: ${markerId}`);
+  appState.activationInProgress = true;
+  
+  const lottieContainer = document.getElementById('lottie-character');
+  
+  if (lottieContainer) {
+    // 添加切换动画效果
+    lottieContainer.style.animation = 'fadeInScale 0.5s ease-out';
+    
+    // 加载并播放新的Lottie动画
+    loadLottieAnimation(markerId);
+    
+    appState.currentAnimation = animationConfig[markerId].file;
+    appState.activationInProgress = false;
+    
+    const config = animationConfig[markerId];
+    showNotification(`已切换到${config.name}！`, 'success');
+    updateUI();
+  }
+}
+        </div>
+
+        <h3>3. 状态管理改进</h3>
+        <ul>
+            <li><strong>currentMarker</strong>: 跟踪当前激活的标记ID</li>
+            <li><strong>currentAnimation</strong>: 跟踪当前播放的动画文件</li>
+            <li><strong>activationInProgress</strong>: 防止动画切换过程中的冲突</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>预期行为</h2>
+        <div class="status warning">
+            <strong>🎯 正确的行为应该是：</strong>
+            <ul>
+                <li>扫描第一个标记 → 显示第一个动画</li>
+                <li>扫描第二个标记 → 切换到第二个动画</li>
+                <li>扫描第三个标记 → 切换到第三个动画</li>
+                <li>重复扫描同一标记 → 保持当前动画</li>
+                <li>移开所有标记 → 动画继续播放</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>调试信息</h2>
+        <p>打开浏览器控制台查看详细的调试信息：</p>
+        <ul>
+            <li>标记发现/丢失事件</li>
+            <li>动画加载状态</li>
+            <li>切换过程日志</li>
+            <li>错误信息（如果有）</li>
+        </ul>
+        
+        <button onclick="openConsole()">打开控制台说明</button>
+    </div>
+
+    <script>
+        function openConsole() {
+            alert('打开控制台的方法：\n\nChrome/Edge: F12 或 Ctrl+Shift+I\nSafari: Cmd+Option+I\nFirefox: F12 或 Ctrl+Shift+K\n\n查看 Console 标签页的日志信息。');
+        }
+
+        // 检查服务器状态
+        fetch('http://localhost:8000')
+            .then(response => {
+                if (response.ok) {
+                    console.log('✅ 服务器运行正常');
+                    document.body.innerHTML += '<div class="status success" style="margin-top: 20px;"><strong>✅ 服务器状态：</strong>运行正常，可以开始测试</div>';
+                }
+            })
+            .catch(error => {
+                console.log('❌ 服务器未运行');
+                document.body.innerHTML += '<div class="status warning" style="margin-top: 20px;"><strong>❌ 服务器状态：</strong>未运行，请先启动服务器</div>';
+            });
+    </script>
+</body>
+</html> 
