@@ -352,25 +352,31 @@ function showLine(isShow) {
   if (tipLine && tipText) {
     tipLine.style.display = isShow ? 'block' : 'none';
     tipText.style.display = isShow ? 'block' : 'none';
-  } 
 
-  if (isShow) {
-    const tipNumber = document.getElementById('tip-number');
-    if (tipNumber) {
-      tipNumber.style.display = 'block';
+    // 销毁现有实例
+    if (lottieInstance) {
+      lottieInstance.destroy();
+      lottieInstance = null;
+    }
 
-      let count = 3;
-      let delay = 1000;
-      let timer = setInterval(() => {
-        count--;
-        tipNumber.textContent = count;
-        if (count === 0) {
-          tipNumber.style.display = 'none';
-          clearInterval(timer);
-          switchToNewAnimation('fixed-animate');
-          count = 3;
-        }
-      }, delay);
+    if (isShow) {
+      const tipNumber = document.getElementById('tip-number');
+      if (tipNumber) {
+        tipNumber.style.display = 'block';
+  
+        let count = 3;
+        let delay = 1000;
+        let timer = setInterval(() => {
+          count--;
+          tipNumber.textContent = count;
+          if (count === 0) {
+            tipNumber.style.display = 'none';
+            clearInterval(timer);
+            switchToNewAnimation('fixed-animate');
+            count = 3;
+          }
+        }, delay);
+      }
     }
   }
 }
