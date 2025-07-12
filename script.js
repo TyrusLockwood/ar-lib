@@ -174,17 +174,31 @@ function switchToNewAnimation(markerId) {
   console.log(`切换到新动画: ${markerId}`);
   appState.activationInProgress = true;
 
-  const lottieContainer = document.getElementById('lottie-character');
+  // 根据标记ID选择不同的容器
+  let lottieContainer;
+  if (markerId === 'fixed-animate') {
+    lottieContainer = document.getElementById('lottie-character-fixed');
+  } else {
+    lottieContainer = document.getElementById('lottie-character');
+  }
   
   if (lottieContainer) {
+    // 显示容器
+    lottieContainer.style.display = 'block';
+    
     // 添加切换动画效果
     lottieContainer.style.animation = 'fadeInScale 0.5s ease-out';
     
-    // 加载并播放新的Lottie动画
-    loadLottieAnimation(markerId);
+    // 根据标记ID选择不同的加载方法
+    if (markerId === 'fixed-animate') {
+      loadLottieAnimationFixed();
+    } else {
+      loadLottieAnimation(markerId);
+    }
     
     appState.currentAnimation = animationConfig[markerId].file;
     appState.currentMarker = markerId;
+    appState.characterActivated = true; // 确保动画状态被激活
     appState.activationInProgress = false;
     
     const config = animationConfig[markerId];
@@ -259,6 +273,10 @@ function loadLottieAnimationFixed() {
   }
 
   const config = animationConfig['fixed-animate'];
+  if (!config) {
+    console.error('未找到fixed-animate的配置');
+    return;
+  }
 
   try {
     // 创建新的Lottie实例
@@ -273,10 +291,7 @@ function loadLottieAnimationFixed() {
     // 监听动画加载完成
     lottieInstance.addEventListener('DOMLoaded', function() {
       console.log(`${config.name}加载完成`);
-      // 只有在首次加载时才显示加载成功通知，避免切换时重复显示
-      if (!appState.characterActivated) {
-        showNotification(`${config.name}加载成功！`, 'success');
-      }
+      showNotification(`${config.name}加载成功！`, 'success');
     });
 
     // 监听动画错误
