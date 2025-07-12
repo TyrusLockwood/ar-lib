@@ -28,6 +28,11 @@ const animationConfig = {
     file: 'assets/character-2.json',
     name: '动画3',
     description: 'Kanji标记动画'
+  },
+  'fixed-animate': {
+    file: 'assets/character-3.json',
+    name: '动画4',
+    description: '固定动画'
   }
 };
 
@@ -242,6 +247,50 @@ function loadLottieAnimation(markerId) {
   }
 }
 
+function loadLottieAnimationFixed() {
+  const lottieContainer = document.getElementById('lottie-character-fixed');
+  
+  if (!lottieContainer) return;
+
+  // 销毁现有实例
+  if (lottieInstance) {
+    lottieInstance.destroy();
+    lottieInstance = null;
+  }
+
+  const config = animationConfig['fixed-animate'];
+
+  try {
+    // 创建新的Lottie实例
+    lottieInstance = lottie.loadAnimation({
+      container: lottieContainer,
+      renderer: 'svg',
+      loop: true,
+      autoplay: true,
+      path: config.file
+    });
+
+    // 监听动画加载完成
+    lottieInstance.addEventListener('DOMLoaded', function() {
+      console.log(`${config.name}加载完成`);
+      // 只有在首次加载时才显示加载成功通知，避免切换时重复显示
+      if (!appState.characterActivated) {
+        showNotification(`${config.name}加载成功！`, 'success');
+      }
+    });
+
+    // 监听动画错误
+    lottieInstance.addEventListener('error', function(error) {
+      console.error(`${config.name}加载失败:`, error);
+      showNotification(`${config.name}加载失败，请检查文件路径`, 'error');
+    });
+
+  } catch (error) {
+    console.error(`创建${config.name}实例失败:`, error);
+    showNotification(`${config.name}初始化失败`, 'error');
+  }
+}
+
 // 重置Lottie动画
 function resetCharacter() {
   console.log('重置Lottie动画...');
@@ -277,6 +326,37 @@ function updateUI() {
   } else {
     infoText.textContent = '将摄像头对准任意标记来激活对应的Lottie动画';
     resetBtn.disabled = true;
+  }
+}
+
+// 显示标记
+function showLine(isShow) {
+  console.log('showLine', isShow);
+  const tipLine = document.getElementById('tip-line');
+  const tipText = document.getElementById('tip-text');
+  if (tipLine && tipText) {
+    tipLine.style.display = isShow ? 'block' : 'none';
+    tipText.style.display = isShow ? 'block' : 'none';
+  } 
+
+  if (isShow) {
+    const tipNumber = document.getElementById('tip-number');
+    if (tipNumber) {
+      tipNumber.style.display = 'block';
+
+      let count = 3;
+      let delay = 1000;
+      let timer = setInterval(() => {
+        count--;
+        tipNumber.textContent = count;
+        if (count === 0) {
+          tipNumber.style.display = 'none';
+          clearInterval(timer);
+          switchToNewAnimation('fixed-animate');
+          count = 3;
+        }
+      }, delay);
+    }
   }
 }
 
